@@ -20,6 +20,7 @@ export const MOVES_LIST: MoveData[] = [
   { id: 'glare', name: 'Glare', type: 'Normale', category: 'Stato', power: 0, accuracy: 90, pp: 30, description: 'Paralizza il bersaglio (anche tipo Terra).' },
   { id: 'encore', name: 'Encore', type: 'Normale', category: 'Stato', power: 0, accuracy: 100, pp: 5, description: 'Costringe il nemico a ripetere l’ultima mossa.' },
   { id: 'facade', name: 'Facade', type: 'Normale', category: 'Fisico', power: 70, accuracy: 100, pp: 20, description: 'Potenza raddoppiata (140) se scottato/avvelenato.' },
+  { id: 'entrainment', name: 'Entrainment', type: 'Normale', category: 'Stato', power: 0, accuracy: 100, pp: 15, description: 'Trasferisce la propria Abilità (es. Truant) al bersaglio.' },
 
   // Fuoco
   { id: 'flamethrower', name: 'Flamethrower', type: 'Fuoco', category: 'Speciale', power: 95, accuracy: 100, pp: 15, description: 'Potenza 95 (Gen 5), può scottare (10%).' },

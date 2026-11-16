@@ -24,14 +24,20 @@ import {
   MilestonePhase,
   SpoilerStage,
 } from '../data/bb2ItemsAndTms';
+import { CompetitiveTeamSuggestion } from '../data/competitiveTeams';
 import { GameProgress } from '../types/pokemon';
 import { parseGen5SaveFile } from '../utils/savParser';
+import { CompetitiveTeamsPanel } from './CompetitiveTeamsPanel';
 import { getSpoilerUnlockHint, SpoilerGuardBar, SpoilerMode } from './SpoilerGuardBar';
+
+export type GuideSubTab = 'milestones' | 'competitive' | 'tms' | 'items';
 
 interface GuideProgressViewProps {
   progress: GameProgress;
   onUpdateProgress: (next: GameProgress) => void;
   onShowToast: (msg: string) => void;
+  onImportCompetitiveTeam: (team: CompetitiveTeamSuggestion) => void;
+  requestedSubTab?: { tab: GuideSubTab; nonce: number } | null;
   spoilerEnabled: boolean;
   spoilerMode: SpoilerMode;
   effectiveSpoilerStage: SpoilerStage;
@@ -61,13 +67,15 @@ export const GuideProgressView: React.FC<GuideProgressViewProps> = ({
   progress,
   onUpdateProgress,
   onShowToast,
+  onImportCompetitiveTeam,
+  requestedSubTab,
   spoilerEnabled,
   spoilerMode,
   effectiveSpoilerStage,
   onToggleSpoiler,
   onChangeSpoilerMode,
 }) => {
-  const [subTab, setSubTab] = useState<'milestones' | 'tms' | 'items'>('milestones');
+  const [subTab, setSubTab] = useState<GuideSubTab>(requestedSubTab?.tab ?? 'milestones');
   const [phaseFilter, setPhaseFilter] = useState<MilestonePhase | 'Tutte'>('Tutte');
   const [revealedMilestoneIds, setRevealedMilestoneIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,6 +86,12 @@ export const GuideProgressView: React.FC<GuideProgressViewProps> = ({
   const [uploading, setUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (requestedSubTab?.tab) {
+      setSubTab(requestedSubTab.tab);
+    }
+  }, [requestedSubTab]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
@@ -417,9 +431,10 @@ export const GuideProgressView: React.FC<GuideProgressViewProps> = ({
       />
 
       {/* Sub-Tabs */}
-      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 max-w-xl">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 max-w-3xl">
         {[
           { id: 'milestones', label: 'Obiettivi Run', icon: Flag },
+          { id: 'competitive', label: 'Team Metro & PWT', icon: Trophy },
           { id: 'tms', label: 'Guida MT / MN', icon: Disc },
           { id: 'items', label: 'Oggetti & Pietre', icon: Backpack },
         ].map((t) => {
@@ -429,7 +444,7 @@ export const GuideProgressView: React.FC<GuideProgressViewProps> = ({
             <button
               key={t.id}
               type="button"
-              onClick={() => setSubTab(t.id as 'milestones' | 'tms' | 'items')}
+              onClick={() => setSubTab(t.id as GuideSubTab)}
               className={`min-h-[42px] px-2.5 rounded-lg text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition whitespace-nowrap ${
                 active
                   ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
@@ -517,6 +532,20 @@ export const GuideProgressView: React.FC<GuideProgressViewProps> = ({
                   <strong>Servizi PWT:</strong> Esperto Mosse (Fratelli Gemelli con Cocci), Esperto Introforza &amp; Giudice IV.
                 </div>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Cerchi squadre pronte per scalare i Treni Super (Singolo, Doppio, Multi) o i Campioni PWT?
+              </span>
+              <button
+                type="button"
+                onClick={() => setSubTab('competitive')}
+                className="min-h-[40px] px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm transition shrink-0"
+              >
+                <Trophy className="w-3.5 h-3.5" />
+                <span>Apri Team Suggeriti Metro &amp; PWT</span>
+              </button>
             </div>
           </div>
 
@@ -634,6 +663,14 @@ export const GuideProgressView: React.FC<GuideProgressViewProps> = ({
             );
           })}
         </div>
+      )}
+
+      {/* COMPETITIVE TEAMS TAB (METRO LOTTA & PWT) */}
+      {subTab === 'competitive' && (
+        <CompetitiveTeamsPanel
+          onImportTeam={onImportCompetitiveTeam}
+          onShowToast={onShowToast}
+        />
       )}
 
       {/* TMs/HMs & ITEMS SHARED SEARCH/FILTERS */}

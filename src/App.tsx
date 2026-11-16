@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Menu } from 'lucide-react';
 import { AnalysisView } from './components/AnalysisView';
 import { BossMatchupView } from './components/BossMatchupView';
-import { GuideProgressView } from './components/GuideProgressView';
+import { GuideProgressView, GuideSubTab } from './components/GuideProgressView';
 import { MemberEditorModal } from './components/MemberEditorModal';
 import { NavigationDrawer } from './components/NavigationDrawer';
 import { OfflineIndicator } from './components/OfflineIndicator';
@@ -14,6 +14,10 @@ import { TeamBuilderView } from './components/TeamBuilderView';
 import { TeamsManagerView } from './components/TeamsManagerView';
 import { TypeChartView } from './components/TypeChartView';
 import { SpoilerStage } from './data/bb2ItemsAndTms';
+import {
+  buildSavedTeamFromCompetitiveSuggestion,
+  CompetitiveTeamSuggestion,
+} from './data/competitiveTeams';
 import {
   AppTab,
   GameProgress,
@@ -133,6 +137,10 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [sharingTeam, setSharingTeam] = useState<SavedTeam | null>(null);
+  const [requestedGuideSubTab, setRequestedGuideSubTab] = useState<{
+    tab: GuideSubTab;
+    nonce: number;
+  } | null>(null);
 
   const [progress, setProgress] = useState<GameProgress>(loadInitialProgress);
   const [spoilerPrefs, setSpoilerPrefs] = useState<SpoilerPrefs>(loadInitialSpoilerPrefs);
@@ -297,6 +305,22 @@ export default function App() {
     navigateTo('team');
     showToast(`Creata "${created.name}"`);
   };
+
+  const handleImportCompetitiveTeam = useCallback(
+    (suggestion: CompetitiveTeamSuggestion) => {
+      const created = buildSavedTeamFromCompetitiveSuggestion(suggestion);
+      setTeams((prev) => [created, ...prev]);
+      setActiveTeamId(created.id);
+      navigateTo('team');
+      showToast(`Squadra "${suggestion.title}" caricata nel Costruttore!`);
+    },
+    [navigateTo, showToast]
+  );
+
+  const handleOpenCompetitiveGuide = useCallback(() => {
+    setRequestedGuideSubTab({ tab: 'competitive', nonce: Date.now() });
+    navigateTo('guide');
+  }, [navigateTo]);
 
   const handleDuplicateTeam = (id: string) => {
     const orig = teams.find((t) => t.id === id);
@@ -510,6 +534,7 @@ export default function App() {
               onDuplicateTeam={handleDuplicateTeam}
               onUpdateTeamCategory={handleUpdateTeamCategory}
               onDeleteTeam={handleDeleteTeam}
+              onOpenCompetitiveGuide={handleOpenCompetitiveGuide}
             />
           )}
 
@@ -550,6 +575,8 @@ export default function App() {
               progress={progress}
               onUpdateProgress={handleUpdateProgress}
               onShowToast={showToast}
+              onImportCompetitiveTeam={handleImportCompetitiveTeam}
+              requestedSubTab={requestedGuideSubTab}
               spoilerEnabled={spoilerPrefs.enabled}
               spoilerMode={spoilerPrefs.mode}
               effectiveSpoilerStage={effectiveSpoilerStage}

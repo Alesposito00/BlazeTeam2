@@ -6,6 +6,7 @@ import {
   Share2,
   Sparkles,
   Trash2,
+  Trophy,
   X,
 } from 'lucide-react';
 import { BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
@@ -30,6 +31,7 @@ interface TeamsManagerViewProps {
   onDuplicateTeam: (id: string) => void;
   onUpdateTeamCategory: (id: string, category: TeamCategory, monotype?: PokemonType) => void;
   onDeleteTeam: (id: string) => void;
+  onOpenCompetitiveGuide: () => void;
 }
 
 export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
@@ -41,6 +43,7 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
   onDuplicateTeam,
   onUpdateTeamCategory,
   onDeleteTeam,
+  onOpenCompetitiveGuide,
 }) => {
   const [filterCategory, setFilterCategory] = useState<TeamCategory | 'Tutte'>('Tutte');
   const [showNewModal, setShowNewModal] = useState(false);
@@ -304,9 +307,19 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
 
       {/* Quick Archetype Templates */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
-        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-          <Sparkles className="w-4 h-4 text-red-600 dark:text-red-400" />
-          <span>Template Pronti Blaze Black 2 Redux</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+            <Sparkles className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <span>Template Pronti Blaze Black 2 Redux</span>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenCompetitiveGuide}
+            className="min-h-[38px] px-3.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold inline-flex items-center gap-1.5 transition shrink-0"
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            <span>Team Famosi Metro Lotta &amp; PWT</span>
+          </button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {[
