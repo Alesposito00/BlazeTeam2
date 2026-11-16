@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BlazeDex 2</string>
+    <string name="title_activity_main">BlazeDex 2</string>
+    <string name="package_name">it.blazedex2.app</string>
+    <string name="custom_url_scheme">it.blazedex2.app</string>
+</resources>

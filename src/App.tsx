@@ -208,13 +208,32 @@ export default function App() {
     }, 2800);
   }, []);
 
-  // Navigation with back-stack support
+  const tabHistoryRef = useRef<AppTab[]>(tabHistory);
+  tabHistoryRef.current = tabHistory;
+
+  // Navigation with back-stack + Android WebView hardware Back button support
   const navigateTo = useCallback((nextTab: AppTab) => {
     setTabHistory((prev) => {
       const current = prev[prev.length - 1];
       if (current === nextTab) return prev;
+      try {
+        window.history.pushState({ blazedexTab: nextTab }, '', window.location.href);
+      } catch {
+        // ignore restricted history environments
+      }
       return [...prev.slice(-24), nextTab];
     });
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (tabHistoryRef.current.length > 1) {
+        setTargetSlotForPick(null);
+        setTabHistory((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   const canGoBack = tabHistory.length > 1 || activeTab !== 'team';
@@ -408,9 +427,9 @@ export default function App() {
 
       {/* Main Column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Compact dataDex Top App Bar (56px, <= 7% mobile height) */}
-        <header className="sticky top-0 z-30 h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
-          <div className="h-full px-3 sm:px-6 flex items-center justify-between gap-2">
+        {/* Compact dataDex Top App Bar (56px + Android safe-area-inset-top) */}
+        <header className="sticky top-0 z-30 pt-safe border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+          <div className="h-14 px-3 sm:px-6 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1 min-w-0">
               <button
                 type="button"
@@ -450,7 +469,7 @@ export default function App() {
         </header>
 
         {/* Scrollable Workspace Content */}
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-5 pb-12">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-5 pb-12 pb-safe">
 
           {activeTab === 'team' && (
             <TeamBuilderView

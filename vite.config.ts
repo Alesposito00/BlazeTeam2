@@ -30,7 +30,9 @@ export default defineConfig(() => {
           orientation: 'portrait-primary',
           start_url: '/',
           scope: '/',
+          dir: 'ltr',
           lang: 'it',
+          prefer_related_applications: false,
           categories: ['games', 'utilities'],
           icons: [
             {
