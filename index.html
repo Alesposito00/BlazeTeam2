@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      (function () {
+        try {
+          var winDesc = Object.getOwnPropertyDescriptor(window, 'fetch');
+          var proto = typeof Window !== 'undefined' ? Window.prototype : null;
+          var protoDesc = !winDesc && proto ? Object.getOwnPropertyDescriptor(proto, 'fetch') : null;
+          var activeDesc = winDesc || protoDesc;
+          if (activeDesc && activeDesc.get && !activeDesc.set && (!winDesc || winDesc.configurable)) {
+            var currentFetch = window.fetch;
+            Object.defineProperty(window, 'fetch', {
+              configurable: true,
+              enumerable: true,
+              get: function () {
+                return currentFetch;
+              },
+              set: function (nextFetch) {
+                if (typeof nextFetch === 'function') {
+                  currentFetch = nextFetch;
+                }
+              },
+            });
+          }
+        } catch (e) {}
+
+        try {
+          window.addEventListener(
+            'error',
+            function (ev) {
+              var src = (ev && ev.filename) || '';
+              var msg = (ev && ev.message) || '';
+              var stack = (ev && ev.error && ev.error.stack) || '';
+              if (
+                src.indexOf('chrome-extension://') === 0 ||
+                stack.indexOf('chrome-extension://') !== -1 ||
+                msg.indexOf('Cannot set property fetch of #<Window>') !== -1
+              ) {
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
+              }
+            },
+            true
+          );
+        } catch (e) {}
+      })();
+    </script>
+    <title>BlazeDex 2 — Team Builder Pokémon Blaze Black 2</title>
+    <meta
+      name="description"
+      content="Team Builder e Pokédex in stile dataDex per la hack ROM Pokémon Blaze Black 2, installabile su Android e utilizzabile offline."
+    />
+    <meta property="og:title" content="BlazeDex 2 — Team Builder Pokémon Blaze Black 2" />
+    <meta
+      property="og:description"
+      content="Team Builder e Pokédex in stile dataDex per la hack ROM Pokémon Blaze Black 2, installabile su Android e utilizzabile offline."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#dc2626" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BlazeDex 2" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('blazedex_theme');
+          if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profilo privato dell'utente autenticato con Google e preferenza squadra attiva.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID Firebase Auth del proprietario"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Nome visualizzato dell'account Google"
+        },
+        "activeTeamId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "ID della squadra attualmente selezionata"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp server di creazione profilo"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp server ultimo aggiornamento"
+        }
+      },
+      "required": ["uid", "createdAt", "updatedAt"]
+    },
+    "SavedTeam": {
+      "title": "SavedTeam",
+      "description": "Squadra salvata per Pokémon Blaze Black 2 & Volt White 2 Redux.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "ID univoco della squadra"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID del proprietario della squadra"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Nome della squadra"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Run Principale",
+            "Challenge Mode",
+            "Nuzlocke",
+            "Monotype",
+            "Meteo / Strategia",
+            "Lega & Post-Game"
+          ],
+          "description": "Categoria della squadra"
+        },
+        "monotype": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Tipo opzionale per squadre Monotype"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["Standard", "Challenge Mode"],
+          "description": "Modalità di gioco BB2 Redux"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Note strategiche della squadra"
+        },
+        "members": {
+          "type": "array",
+          "description": "Lista fissa di 6 slot membro (oggetto TeamMember o null)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp server di creazione"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp server ultimo aggiornamento"
+        }
+      },
+      "required": ["id", "ownerId", "name", "category", "mode", "members", "createdAt", "updatedAt"]
+    },
+    "GameProgress": {
+      "title": "GameProgress",
+      "description": "Avanzamento obiettivi, MT/MN ed oggetti ottenuti dall'utente o importati dal file .sav.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID del proprietario"
+        },
+        "completedMilestones": {
+          "type": "array",
+          "description": "Elenco ID obiettivi completati (Palestre, Storia, Lega, Post-Game e Catture Leggendarie)"
+        },
+        "collectedTms": {
+          "type": "array",
+          "description": "Elenco ID MT/MN ottenute"
+        },
+        "collectedItems": {
+          "type": "array",
+          "description": "Elenco ID oggetti chiave/strumenti ottenuti"
+        },
+        "savSummary": {
+          "type": "object",
+          "description": "Riepilogo opzionale estratto dal file .sav/.dsv caricato dall'utente"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp server di creazione"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp server ultimo aggiornamento"
+        }
+      },
+      "required": ["ownerId", "completedMilestones", "collectedTms", "collectedItems", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Documento profilo privato dell'utente e preferenza squadra attiva"
+    },
+    "/users/{userId}/teams/{teamId}": {
+      "schema": { "$ref": "#/entities/SavedTeam" },
+      "description": "Collezione privata delle squadre Pokémon salvate dell'utente"
+    },
+    "/users/{userId}/progress/{progressId}": {
+      "schema": { "$ref": "#/entities/GameProgress" },
+      "description": "Avanzamento della run BB2 Redux (obiettivi, MT/MN, oggetti e riepilogo salvataggio)"
+    }
+  }
+}

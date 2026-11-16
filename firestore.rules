@@ -1,0 +1,236 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidStatMap(statMap, minVal, maxVal) {
+      return statMap is map &&
+        statMap.keys().hasAll(['hp', 'atk', 'def', 'spa', 'spd', 'spe']) &&
+        statMap.keys().hasOnly(['hp', 'atk', 'def', 'spa', 'spd', 'spe']) &&
+        statMap.hp is int && statMap.hp >= minVal && statMap.hp <= maxVal &&
+        statMap.atk is int && statMap.atk >= minVal && statMap.atk <= maxVal &&
+        statMap.def is int && statMap.def >= minVal && statMap.def <= maxVal &&
+        statMap.spa is int && statMap.spa >= minVal && statMap.spa <= maxVal &&
+        statMap.spd is int && statMap.spd >= minVal && statMap.spd <= maxVal &&
+        statMap.spe is int && statMap.spe >= minVal && statMap.spe <= maxVal;
+    }
+
+    function isValidMoveSlot(mv) {
+      return mv == null || (mv is string && mv.size() >= 1 && mv.size() <= 60);
+    }
+
+    function isValidMemberSlot(slot) {
+      return slot == null || (
+        slot is map &&
+        slot.keys().hasAll(['uid', 'speciesId', 'level', 'ability', 'item', 'nature', 'ivs', 'evs', 'moves', 'shiny']) &&
+        slot.keys().hasOnly(['uid', 'speciesId', 'nickname', 'level', 'ability', 'item', 'nature', 'ivs', 'evs', 'moves', 'shiny', 'notes']) &&
+        slot.uid is string && slot.uid.size() >= 1 && slot.uid.size() <= 128 &&
+        slot.speciesId is int && slot.speciesId >= 1 && slot.speciesId <= 649 &&
+        (!('nickname' in slot) || (slot.nickname is string && slot.nickname.size() <= 40)) &&
+        slot.level is int && slot.level >= 1 && slot.level <= 100 &&
+        slot.ability is string && slot.ability.size() <= 60 &&
+        slot.item is string && slot.item.size() <= 60 &&
+        slot.nature is string && slot.nature.size() <= 30 &&
+        slot.shiny is bool &&
+        (!('notes' in slot) || (slot.notes is string && slot.notes.size() <= 300)) &&
+        isValidStatMap(slot.ivs, 0, 31) &&
+        isValidStatMap(slot.evs, 0, 252) &&
+        slot.moves is list &&
+        slot.moves.size() == 4 &&
+        isValidMoveSlot(slot.moves[0]) &&
+        isValidMoveSlot(slot.moves[1]) &&
+        isValidMoveSlot(slot.moves[2]) &&
+        isValidMoveSlot(slot.moves[3])
+      );
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'activeTeamId', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid == userId && isValidId(data.uid) &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+        (!('activeTeamId' in data) || (data.activeTeamId is string && isValidId(data.activeTeamId))) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTeamCategory(cat) {
+      return cat in [
+        'Run Principale',
+        'Challenge Mode',
+        'Nuzlocke',
+        'Monotype',
+        'Meteo / Strategia',
+        'Lega & Post-Game'
+      ];
+    }
+
+    function isValidTeam(data, userId, teamId) {
+      return data.keys().hasAll(['id', 'ownerId', 'name', 'category', 'mode', 'members', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['id', 'ownerId', 'name', 'category', 'monotype', 'mode', 'notes', 'members', 'createdAt', 'updatedAt']) &&
+        data.id is string && data.id == teamId && isValidId(data.id) &&
+        data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+        data.category is string && isValidTeamCategory(data.category) &&
+        (!('monotype' in data) || (data.monotype is string && data.monotype.size() >= 1 && data.monotype.size() <= 30)) &&
+        data.mode in ['Standard', 'Challenge Mode'] &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+        data.members is list &&
+        data.members.size() == 6 &&
+        isValidMemberSlot(data.members[0]) &&
+        isValidMemberSlot(data.members[1]) &&
+        isValidMemberSlot(data.members[2]) &&
+        isValidMemberSlot(data.members[3]) &&
+        isValidMemberSlot(data.members[4]) &&
+        isValidMemberSlot(data.members[5]) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isBoundedStringList(arr, maxLen) {
+      return arr is list &&
+        arr.size() <= maxLen &&
+        (arr.size() == 0 || (arr[0] is string && arr[0].size() >= 1 && arr[0].size() <= 100));
+    }
+
+    function isValidSavSummary(sav) {
+      return sav is map &&
+        sav.keys().hasAll(['trainerName', 'tid', 'playtimeHours', 'playtimeMinutes', 'money', 'badgesCount', 'pokedexCaught', 'fileName', 'parsedAt']) &&
+        sav.keys().hasOnly(['trainerName', 'tid', 'playtimeHours', 'playtimeMinutes', 'money', 'badgesCount', 'pokedexCaught', 'fileName', 'parsedAt']) &&
+        sav.trainerName is string && sav.trainerName.size() <= 30 &&
+        sav.tid is int && sav.tid >= 0 && sav.tid <= 65535 &&
+        sav.playtimeHours is int && sav.playtimeHours >= 0 && sav.playtimeHours <= 9999 &&
+        sav.playtimeMinutes is int && sav.playtimeMinutes >= 0 && sav.playtimeMinutes <= 59 &&
+        sav.money is int && sav.money >= 0 && sav.money <= 99999999 &&
+        sav.badgesCount is int && sav.badgesCount >= 0 && sav.badgesCount <= 8 &&
+        sav.pokedexCaught is int && sav.pokedexCaught >= 0 && sav.pokedexCaught <= 649 &&
+        sav.fileName is string && sav.fileName.size() <= 120 &&
+        sav.parsedAt is int && sav.parsedAt >= 0;
+    }
+
+    function isValidGameProgress(data, userId) {
+      return data.keys().hasAll(['ownerId', 'completedMilestones', 'collectedTms', 'collectedItems', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'completedMilestones', 'collectedTms', 'collectedItems', 'savSummary', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId == userId && isValidId(data.ownerId) &&
+        isBoundedStringList(data.completedMilestones, 120) &&
+        isBoundedStringList(data.collectedTms, 150) &&
+        isBoundedStringList(data.collectedItems, 300) &&
+        (!('savSummary' in data) || isValidSavSummary(data.savSummary)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // User profile & active team preference (strictly private to owner)
+    match /users/{userId} {
+      allow list: if false;
+      allow get: if isSignedIn() && isValidId(userId) && isOwner(userId);
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'activeTeamId', 'updatedAt']) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+
+      // Saved Pokémon teams owned by userId
+      match /teams/{teamId} {
+        allow list: if isSignedIn() && isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow get: if isSignedIn() &&
+          isValidId(userId) &&
+          isValidId(teamId) &&
+          isOwner(userId) &&
+          (resource == null || existing().ownerId == request.auth.uid);
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(teamId) &&
+          isOwner(userId) &&
+          isValidTeam(incoming(), userId, teamId) &&
+          exists(/databases/$(database)/documents/users/$(userId)) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(teamId) &&
+          isOwner(userId) &&
+          existing().ownerId == request.auth.uid &&
+          isValidTeam(incoming(), userId, teamId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'monotype', 'mode', 'notes', 'members', 'updatedAt']) &&
+          incoming().id == existing().id &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time;
+        allow delete: if isVerifiedUser() &&
+          isValidId(userId) &&
+          isValidId(teamId) &&
+          isOwner(userId) &&
+          existing().ownerId == request.auth.uid;
+      }
+
+      // Game progression, TMs/HMs, and items tracker owned by userId
+      match /progress/{progressId} {
+        allow list: if false;
+        allow get: if isSignedIn() &&
+          isValidId(userId) &&
+          progressId == 'main' &&
+          isOwner(userId) &&
+          (resource == null || existing().ownerId == request.auth.uid);
+        allow create: if isVerifiedUser() &&
+          isValidId(userId) &&
+          progressId == 'main' &&
+          isOwner(userId) &&
+          isValidGameProgress(incoming(), userId) &&
+          exists(/databases/$(database)/documents/users/$(userId)) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(userId) &&
+          progressId == 'main' &&
+          isOwner(userId) &&
+          existing().ownerId == request.auth.uid &&
+          isValidGameProgress(incoming(), userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['completedMilestones', 'collectedTms', 'collectedItems', 'savSummary', 'updatedAt']) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time;
+        allow delete: if false;
+      }
+    }
+  }
+}

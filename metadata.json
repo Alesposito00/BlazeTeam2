@@ -1,0 +1,6 @@
+{
+  "name": "BlazeDex 2",
+  "description": "Team Builder e Pokédex in stile dataDex per la hack ROM Pokémon Blaze Black 2, installabile su Android e utilizzabile offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
