@@ -1,17 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { User } from 'firebase/auth';
 import {
-  CheckCircle2,
-  Cloud,
-  CloudUpload,
   Copy,
-  Download,
-  ExternalLink,
-  FileCode2,
   FolderOpen,
-  Loader2,
   Plus,
-  RefreshCw,
   Share2,
   Sparkles,
   Trash2,
@@ -19,7 +10,6 @@ import {
 } from 'lucide-react';
 import { BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
 import { ALL_TYPES, TYPE_STYLES } from '../data/typeChart';
-import { DriveShowdownFile } from '../services/driveTeams';
 import { PokemonType, SavedTeam, TeamCategory } from '../types/pokemon';
 import { TEAM_CATEGORIES, TeamPresetType } from '../utils/showdown';
 import { PokemonArtwork } from './PokemonArtwork';
@@ -28,18 +18,6 @@ import { TypeBadge } from './TypeBadge';
 interface TeamsManagerViewProps {
   teams: SavedTeam[];
   activeTeamId: string;
-  user: User | null;
-  authLoading: boolean;
-  driveConnected: boolean;
-  driveFiles: DriveShowdownFile[];
-  driveLoading: boolean;
-  onSignInGoogle: () => void;
-  onRefreshDriveFiles: () => void;
-  onSaveTeamToDrive: (teamId: string) => void;
-  onSaveAllTeamsToDrive: () => void;
-  onImportDriveFile: (file: DriveShowdownFile) => void;
-  onImportAllFromDrive: () => void;
-  onRequestDeleteDriveFile: (file: DriveShowdownFile) => void;
   onShareTeam: (id: string) => void;
   onSelectAndOpen: (id: string) => void;
   onCreateCustomTeam: (options: {
@@ -57,18 +35,6 @@ interface TeamsManagerViewProps {
 export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
   teams,
   activeTeamId,
-  user,
-  authLoading,
-  driveConnected,
-  driveFiles,
-  driveLoading,
-  onSignInGoogle,
-  onRefreshDriveFiles,
-  onSaveTeamToDrive,
-  onSaveAllTeamsToDrive,
-  onImportDriveFile,
-  onImportAllFromDrive,
-  onRequestDeleteDriveFile,
   onShareTeam,
   onSelectAndOpen,
   onCreateCustomTeam,
@@ -124,211 +90,6 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
           <Plus className="w-4 h-4" />
           <span>Crea Nuova Squadra</span>
         </button>
-      </div>
-
-      {/* Google Drive Cloud Showdown (.txt) Banner & File Browser */}
-      <div
-        className={`p-4 rounded-2xl border space-y-4 ${
-          driveConnected
-            ? 'bg-emerald-500/[0.04] border-emerald-500/25'
-            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-        }`}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-3 min-w-0">
-            <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                driveConnected
-                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-red-500/10 text-red-600 dark:text-red-400'
-              }`}
-            >
-              <Cloud className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                  {driveConnected
-                    ? `Google Drive Showdown attivo (${user?.email || user?.displayName || 'Google'})`
-                    : user
-                      ? 'Autorizza Google Drive per salvare e condividere file Showdown'
-                      : 'Salva e condividi squadre su Google Drive (solo file Showdown .txt)'}
-                </span>
-                {driveConnected && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    {driveLoading ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Sincronizzo Drive...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>{driveFiles.length} file .txt</span>
-                      </>
-                    )}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {driveConnected
-                  ? 'Ogni squadra viene salvata nella cartella «BlazeDex 2 - Squadre Showdown» unicamente come file .showdown.txt leggero e condivisibile tramite link Drive.'
-                  : 'Connetti il tuo account Google per salvare le squadre come file .showdown.txt sul tuo Drive e condividerle in 1 tocco su qualsiasi dispositivo.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            {driveConnected ? (
-              <>
-                <button
-                  type="button"
-                  disabled={driveLoading}
-                  onClick={onSaveAllTeamsToDrive}
-                  className="min-h-[40px] px-3.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-semibold inline-flex items-center gap-1.5 transition"
-                >
-                  <CloudUpload className="w-3.5 h-3.5" />
-                  <span>Salva Tutte su Drive</span>
-                </button>
-                {driveFiles.length > 0 && (
-                  <button
-                    type="button"
-                    disabled={driveLoading}
-                    onClick={onImportAllFromDrive}
-                    className="min-h-[40px] px-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-semibold inline-flex items-center gap-1.5 hover:opacity-90 disabled:opacity-60 transition"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Carica Tutte</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  disabled={driveLoading}
-                  onClick={onRefreshDriveFiles}
-                  className="min-h-[40px] px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5 hover:border-emerald-500 disabled:opacity-60 transition"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${driveLoading ? 'animate-spin' : ''}`} />
-                  <span>Aggiorna</span>
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                disabled={authLoading}
-                onClick={onSignInGoogle}
-                className="min-h-[40px] px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold inline-flex items-center gap-2 hover:opacity-90 disabled:opacity-60 transition"
-              >
-                {authLoading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      fill="#EA4335"
-                      d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.1 14.6 2.2 12 2.2 6.6 2.2 2.2 6.6 2.2 12s4.4 9.8 9.8 9.8c5.7 0 9.4-4 9.4-9.6 0-.6-.1-1.1-.2-1.6H12z"
-                    />
-                  </svg>
-                )}
-                <span>{user ? 'Collega Google Drive' : 'Accedi con Google'}</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Google Drive Showdown Files List */}
-        {driveConnected && (
-          <div className="pt-3 border-t border-emerald-500/20 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              <span className="inline-flex items-center gap-1.5">
-                <FileCode2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                File Showdown salvati in Google Drive ({driveFiles.length})
-              </span>
-            </div>
-
-            {driveLoading && driveFiles.length === 0 ? (
-              <div className="py-4 text-center text-xs text-slate-500 dark:text-slate-400 inline-flex items-center justify-center gap-2 w-full">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Caricamento file Showdown da Google Drive...</span>
-              </div>
-            ) : driveFiles.length === 0 ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400 py-1">
-                Nessun file Showdown salvato su Google Drive. Premi «Salva Drive» su una squadra qui sotto per caricarlo subito.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {driveFiles.map((file) => {
-                  const modDate = file.modifiedTime
-                    ? new Date(file.modifiedTime).toLocaleDateString('it-IT', {
-                        day: '2-digit',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '';
-                  return (
-                    <div
-                      key={file.id}
-                      className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          {file.name}
-                        </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
-                          {file.appProperties?.category && (
-                            <span className="font-semibold text-red-600 dark:text-red-400">
-                              {file.appProperties.category}
-                            </span>
-                          )}
-                          {modDate && <span>{modDate}</span>}
-                          {file.shared && (
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                              · Link attivo
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => onImportDriveFile(file)}
-                          disabled={driveLoading}
-                          className="min-h-[34px] px-2.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-semibold inline-flex items-center gap-1 hover:opacity-90 disabled:opacity-50 transition"
-                          title="Importa questo file Showdown da Drive nell'app"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>Carica</span>
-                        </button>
-                        {file.webViewLink && (
-                          <a
-                            href={file.webViewLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="min-w-[34px] min-h-[34px] rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition"
-                            title="Apri file Showdown su Google Drive"
-                            aria-label={`Apri ${file.name} su Google Drive`}
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => onRequestDeleteDriveFile(file)}
-                          disabled={driveLoading}
-                          className="min-w-[34px] min-h-[34px] rounded-lg text-red-600 dark:text-red-400 hover:bg-red-500/10 flex items-center justify-center transition"
-                          title="Elimina file da Google Drive"
-                          aria-label={`Elimina ${file.name} da Google Drive`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Category Filter Strip */}
@@ -507,19 +268,9 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
                   <div className="flex items-center gap-1 flex-wrap">
                     <button
                       type="button"
-                      onClick={() => onSaveTeamToDrive(t.id)}
-                      disabled={driveLoading}
-                      className="min-h-[40px] px-2.5 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 inline-flex items-center gap-1.5 transition"
-                      title="Salva file Showdown (.txt) su Google Drive"
-                    >
-                      <CloudUpload className="w-3.5 h-3.5" />
-                      <span>Salva Drive</span>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => onShareTeam(t.id)}
                       className="min-h-[40px] px-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 inline-flex items-center gap-1.5 transition"
-                      title="Condividi file Showdown tramite Google Drive"
+                      title="Condividi squadra come testo Showdown"
                     >
                       <Share2 className="w-3.5 h-3.5" />
                       <span>Condividi</span>

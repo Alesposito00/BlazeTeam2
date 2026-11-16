@@ -2,11 +2,9 @@ import React, { useMemo, useState } from 'react';
 import {
   ArrowRight,
   Check,
-  CloudUpload,
   Copy,
   Edit3,
   FileCode2,
-  Loader2,
   Moon,
   Plus,
   Share2,
@@ -20,7 +18,6 @@ import { BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
 import { MOVES_BY_ID } from '../data/moves';
 import { ITEMS_BY_NAME, NATURES_BY_NAME } from '../data/naturesAndItems';
 import { ALL_TYPES, analyzeTeamDefense, getBST, TYPE_STYLES } from '../data/typeChart';
-import { extractDriveFileIdFromInput } from '../services/driveTeams';
 import { PokemonType, SavedTeam, TeamCategory, TeamMember } from '../types/pokemon';
 import {
   exportTeamToShowdown,
@@ -45,10 +42,7 @@ interface TeamBuilderViewProps {
   onReplaceAllMembers: (members: TeamMember[]) => void;
   onOpenAnalysis: () => void;
   onOpenTeamsManager: () => void;
-  onSaveTeamToDrive: (id: string) => void;
   onShareTeam: (id: string) => void;
-  onImportFromDriveUrl: (fileId: string) => Promise<boolean>;
-  driveLoading: boolean;
   isDark: boolean;
   onToggleTheme: () => void;
 }
@@ -67,10 +61,7 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
   onReplaceAllMembers,
   onOpenAnalysis,
   onOpenTeamsManager,
-  onSaveTeamToDrive,
   onShareTeam,
-  onImportFromDriveUrl,
-  driveLoading,
   isDark,
   onToggleTheme,
 }) => {
@@ -117,29 +108,16 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
     }
   };
 
-  const handleImportSubmit = async () => {
+  const handleImportSubmit = () => {
     const trimmed = importText.trim();
     if (!trimmed) {
-      setImportError('Incolla il testo Showdown o un link Google Drive del file .txt.');
-      return;
-    }
-
-    const driveFileId = extractDriveFileIdFromInput(trimmed);
-    if (driveFileId) {
-      setImportError('');
-      const ok = await onImportFromDriveUrl(driveFileId);
-      if (ok) {
-        setShowShowdownModal(false);
-        setImportText('');
-      } else {
-        setImportError('Impossibile leggere il file da Google Drive. Verifica i permessi o accedi a Google Drive.');
-      }
+      setImportError('Incolla il testo Pokémon Showdown della squadra da importare.');
       return;
     }
 
     const parsed = importTeamFromShowdown(importText);
     if (parsed.length === 0) {
-      setImportError('Nessun Pokémon riconosciuto. Incolla formato Showdown o link Google Drive valido.');
+      setImportError('Nessun Pokémon riconosciuto. Verifica che il testo sia in formato Showdown.');
       return;
     }
     setImportError('');
@@ -285,24 +263,9 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
 
             <button
               type="button"
-              disabled={driveLoading}
-              onClick={() => onSaveTeamToDrive(activeTeam.id)}
-              className="min-h-[44px] px-3.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1.5 transition whitespace-nowrap disabled:opacity-60"
-              title="Salva file Showdown (.txt) su Google Drive"
-            >
-              {driveLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CloudUpload className="w-4 h-4" />
-              )}
-              <span>Salva Drive</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => onShareTeam(activeTeam.id)}
               className="min-h-[44px] px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-100 inline-flex items-center gap-1.5 transition whitespace-nowrap"
-              title="Condividi file Showdown tramite Google Drive"
+              title="Condividi squadra come testo Showdown"
             >
               <Share2 className="w-4 h-4" />
               <span>Condividi</span>
@@ -631,28 +594,28 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    disabled={!exportedText || driveLoading}
+                    disabled={!exportedText}
                     onClick={() => {
                       setShowShowdownModal(false);
-                      onSaveTeamToDrive(activeTeam.id);
+                      onShareTeam(activeTeam.id);
                     }}
                     className="min-h-[44px] px-4 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white text-xs font-semibold inline-flex items-center justify-center gap-2 transition"
                   >
-                    <CloudUpload className="w-4 h-4" />
-                    <span>Salva .txt su Google Drive</span>
+                    <Share2 className="w-4 h-4" />
+                    <span>Condividi Squadra</span>
                   </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Incolla il testo Pokémon Showdown oppure un link di Google Drive a un file Showdown <code className="font-mono">.txt</code>:
+                  Incolla qui il testo Pokémon Showdown / Poképaste della squadra da caricare:
                 </p>
                 <textarea
                   rows={9}
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
-                  placeholder={`https://drive.google.com/file/d/.../view\n\noppure:\n\nSerperior @ Life Orb\nAbility: Contrary\nLevel: 55\nTimid Nature\n- Leaf Storm\n- Dragon Pulse\n- Giga Drain\n- Glare`}
+                  placeholder={`Serperior @ Life Orb\nAbility: Contrary\nLevel: 55\nTimid Nature\n- Leaf Storm\n- Dragon Pulse\n- Giga Drain\n- Glare`}
                   className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200"
                 />
                 {importError && (
@@ -662,15 +625,10 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
                 )}
                 <button
                   type="button"
-                  disabled={driveLoading}
-                  onClick={() => void handleImportSubmit()}
-                  className="w-full min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition"
+                  onClick={handleImportSubmit}
+                  className="w-full min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition"
                 >
-                  {driveLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Upload className="w-4 h-4" />
-                  )}
+                  <Upload className="w-4 h-4" />
                   <span>Importa nella Squadra Attuale</span>
                 </button>
               </div>

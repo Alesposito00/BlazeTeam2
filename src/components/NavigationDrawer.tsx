@@ -1,15 +1,11 @@
 import React from 'react';
-import { User } from 'firebase/auth';
 import {
   BookOpen,
-  Cloud,
   Compass,
   Crown,
   FolderKanban,
   Grid3X3,
   Layers,
-  Loader2,
-  LogOut,
   Moon,
   Shield,
   ShieldCheck,
@@ -32,12 +28,6 @@ interface NavigationDrawerProps {
   spoilerEnabled: boolean;
   onToggleSpoiler: () => void;
   onToggleTeamMode: (mode: 'Standard' | 'Challenge Mode') => void;
-  user: User | null;
-  authLoading: boolean;
-  driveLoading: boolean;
-  driveConnected: boolean;
-  onSignInGoogle: () => void;
-  onSignOut: () => void;
 }
 
 export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
@@ -52,12 +42,6 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   spoilerEnabled,
   onToggleSpoiler,
   onToggleTeamMode,
-  user,
-  authLoading,
-  driveLoading,
-  driveConnected,
-  onSignInGoogle,
-  onSignOut,
 }) => {
   const navItems: {
     id: AppTab;
@@ -75,7 +59,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
     {
       id: 'teams',
       label: 'Le Mie Squadre',
-      subtitle: 'Archivio Run, Nuzlocke e Google Drive (.txt)',
+      subtitle: 'Archivio Run, Nuzlocke e testo Showdown',
       icon: FolderKanban,
       count: teamsCount,
     },
@@ -192,87 +176,6 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
       {/* Compact Drawer Options Footer */}
       <div className="px-3 py-2.5 border-t border-slate-200 dark:border-slate-800 space-y-1.5 bg-slate-50/70 dark:bg-slate-950/40 shrink-0">
-        {/* Compact Google Account Cloud Sync */}
-        {user ? (
-          <div className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              {user.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName || 'Account'}
-                  className="w-6 h-6 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-red-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
-                  {(user.displayName || user.email || 'A').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0">
-                <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate leading-tight">
-                  {user.displayName || user.email || 'Allenatore'}
-                </div>
-                <div
-                  className={`text-[10px] flex items-center gap-1 leading-tight ${
-                    driveConnected
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-amber-600 dark:text-amber-400'
-                  }`}
-                >
-                  {driveLoading ? (
-                    <>
-                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                      <span>Sincronizzo Drive...</span>
-                    </>
-                  ) : driveConnected ? (
-                    <>
-                      <Cloud className="w-2.5 h-2.5" />
-                      <span>Drive Showdown attivo</span>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={onSignInGoogle}
-                      className="inline-flex items-center gap-1 font-semibold hover:underline"
-                    >
-                      <Cloud className="w-2.5 h-2.5" />
-                      <span>Autorizza Google Drive</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="min-w-[30px] min-h-[30px] rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-500/10 flex items-center justify-center transition shrink-0"
-              title="Esci dall'account Google"
-              aria-label="Esci dall'account Google"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={authLoading}
-            onClick={onSignInGoogle}
-            className="w-full min-h-[36px] px-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-bold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-60 transition"
-          >
-            {authLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="#EA4335"
-                  d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.1 14.6 2.2 12 2.2 6.6 2.2 2.2 6.6 2.2 12s4.4 9.8 9.8 9.8c5.7 0 9.4-4 9.4-9.6 0-.6-.1-1.1-.2-1.6H12z"
-                />
-              </svg>
-            )}
-            <span>Accedi con Google</span>
-          </button>
-        )}
-
         {/* Compact Theme & Spoiler Shield Row */}
         <div className="grid grid-cols-2 gap-1.5">
           <button
