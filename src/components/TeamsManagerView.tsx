@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
 import { ALL_TYPES, TYPE_STYLES } from '../data/typeChart';
-import { PokemonType, SavedTeam, TeamCategory } from '../types/pokemon';
+import { BattleFormat, PokemonType, SavedTeam, TeamCategory } from '../types/pokemon';
 import { TEAM_CATEGORIES, TeamPresetType } from '../utils/showdown';
 import { PokemonArtwork } from './PokemonArtwork';
 import { TypeBadge } from './TypeBadge';
@@ -26,6 +26,7 @@ interface TeamsManagerViewProps {
     category: TeamCategory;
     monotype?: PokemonType;
     mode: 'Standard' | 'Challenge Mode';
+    battleFormat: BattleFormat;
     preset: TeamPresetType;
   }) => void;
   onDuplicateTeam: (id: string) => void;
@@ -53,6 +54,7 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
   const [newCategory, setNewCategory] = useState<TeamCategory>('Run Principale');
   const [newMonotype, setNewMonotype] = useState<PokemonType>('Folletto');
   const [newMode, setNewMode] = useState<'Standard' | 'Challenge Mode'>('Challenge Mode');
+  const [newBattleFormat, setNewBattleFormat] = useState<BattleFormat>('Singolo');
   const [newPreset, setNewPreset] = useState<TeamPresetType>('empty');
 
   const filteredTeams = useMemo(() => {
@@ -67,6 +69,7 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
       category: newCategory,
       monotype: newCategory === 'Monotype' ? newMonotype : undefined,
       mode: newMode,
+      battleFormat: newBattleFormat,
       preset: newPreset,
     });
     setNewName('');
@@ -167,9 +170,11 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
                           {t.category}
                         </span>
                         <span aria-hidden="true">·</span>
+                        <span>{t.battleFormat === 'Doppio' ? 'Doppio' : 'Singolo'}</span>
+                        <span aria-hidden="true">·</span>
                         <span>{t.mode}</span>
                         <span aria-hidden="true">·</span>
-                        <span className="font-mono">{memberCount}/6</span>
+                        <span className="font-mono tabular-nums">{memberCount}/6</span>
                         {isActive && (
                           <>
                             <span aria-hidden="true">·</span>
@@ -358,6 +363,7 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
                   category: tpl.cat,
                   monotype: tpl.mono,
                   mode: 'Challenge Mode',
+                  battleFormat: 'Singolo',
                   preset: tpl.preset,
                 })
               }
@@ -444,6 +450,31 @@ export const TeamsManagerView: React.FC<TeamsManagerViewProps> = ({
                   <option value="Challenge Mode">Challenge Mode</option>
                   <option value="Standard">Standard</option>
                 </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Formato Lotta Preferito
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['Singolo', 'Doppio'] as const).map((fmt) => {
+                  const active = newBattleFormat === fmt;
+                  return (
+                    <button
+                      key={fmt}
+                      type="button"
+                      onClick={() => setNewBattleFormat(fmt)}
+                      className={`min-h-[44px] px-3 rounded-xl text-xs font-semibold border transition whitespace-nowrap ${
+                        active
+                          ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      {fmt === 'Singolo' ? 'Lotta in Singolo' : 'Lotta in Doppio'}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

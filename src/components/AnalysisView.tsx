@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, Layers, Shield, ShieldAlert, Swords, X, Zap } from 'lucide-react';
+import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, Layers, Shield, ShieldAlert, ShieldPlus, Swords, X, Zap } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
 import { NATURES_BY_NAME } from '../data/naturesAndItems';
+import { analyzeMissingDefensiveTypes } from '../data/teamAdvisor';
 import {
   ALL_TYPES,
   analyzeMemberWeaknessCounters,
@@ -25,7 +26,7 @@ import {
   getTypeEffectiveness,
   TYPE_STYLES,
 } from '../data/typeChart';
-import { PokemonSpecies, PokemonType, SavedTeam, StatKey, TeamMember } from '../types/pokemon';
+import { BattleFormat, PokemonSpecies, PokemonType, SavedTeam, StatKey, TeamMember } from '../types/pokemon';
 import { PokemonArtwork } from './PokemonArtwork';
 import { TypeBadge } from './TypeBadge';
 
@@ -47,14 +48,16 @@ const STAT_META: {
 interface AnalysisViewProps {
   team: SavedTeam;
   onGoToTeam: () => void;
+  onToggleBattleFormat?: (format: BattleFormat) => void;
 }
 
-export const AnalysisView: React.FC<AnalysisViewProps> = ({ team, onGoToTeam }) => {
+export const AnalysisView: React.FC<AnalysisViewProps> = ({ team, onGoToTeam, onToggleBattleFormat }) => {
   const [subTab, setSubTab] = useState<'defense' | 'offense' | 'synergy' | 'stats'>('defense');
   const [selectedStat, setSelectedStat] = useState<'all' | StatKey>('all');
   const [synergyFilter, setSynergyFilter] = useState<'all' | 'double' | 'gaps'>('all');
   const [expandedOffenseTypes, setExpandedOffenseTypes] = useState<Record<string, boolean>>({});
   const [weaknessModalUid, setWeaknessModalUid] = useState<string | null>(null);
+  const [missingTypesExpanded, setMissingTypesExpanded] = useState<boolean>(true);
 
   const toggleOffenseType = (type: PokemonType) => {
     setExpandedOffenseTypes((prev) => ({
@@ -86,9 +89,16 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ team, onGoToTeam }) 
     [members]
   );
 
+  const battleFormat: BattleFormat = team.battleFormat || 'Singolo';
+
   const synergy = useMemo(
     () => analyzeTeamSynergy(members, BB2_POKEMON_BY_ID),
     [members]
+  );
+
+  const missingTypesAnalysis = useMemo(
+    () => analyzeMissingDefensiveTypes(members, BB2_POKEMON_BY_ID, battleFormat),
+    [members, battleFormat]
   );
 
   const memberStatProfiles = useMemo(() => {
@@ -328,6 +338,236 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ team, onGoToTeam }) 
       {/* Sub-view Content */}
       {subTab === 'defense' && (
         <div className="space-y-4">
+          {/* Missing Defensive Types & Composition Recommender for BB2 Redux (Collapsible) */}
+          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setMissingTypesExpanded((prev) => !prev)}
+                aria-expanded={missingTypesExpanded}
+                className="flex-1 min-w-0 text-left flex items-start justify-between gap-3 group"
+              >
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ShieldPlus className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    <span>Tipi di Pokémon Mancanti per le Sfide di Blaze Black 2</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {missingTypesExpanded
+                      ? `Analisi della composizione attuale (${members.length}/6) contro le minacce più comuni di Capipalestra, Lega, Metro Lotta e PWT.`
+                      : missingTypesAnalysis.threatGaps.length > 0
+                        ? `${missingTypesAnalysis.threatGaps.length} falle rilevate · ${missingTypesAnalysis.recommendations.length} suggerimenti di copertura`
+                        : 'Nessuna falla critica rilevata — tocca Espandi per i dettagli'}
+                  </p>
+                </div>
+              </button>
+
+              <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                {onToggleBattleFormat ? (
+                  <div
+                    className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800"
+                    role="group"
+                    aria-label="Formato lotta per analisi"
+                  >
+                    {(['Singolo', 'Doppio'] as const).map((fmt) => (
+                      <button
+                        key={fmt}
+                        type="button"
+                        onClick={() => onToggleBattleFormat(fmt)}
+                        className={`min-h-[34px] px-3 rounded-lg text-xs font-semibold transition whitespace-nowrap ${
+                          battleFormat === fmt
+                            ? 'bg-red-600 text-white shadow-sm'
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        {fmt}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    Formato {battleFormat}
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setMissingTypesExpanded((prev) => !prev)}
+                  aria-expanded={missingTypesExpanded}
+                  aria-label={missingTypesExpanded ? 'Riduci finestra tipi mancanti' : 'Espandi finestra tipi mancanti'}
+                  className="min-h-[36px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold inline-flex items-center gap-1 transition whitespace-nowrap"
+                >
+                  <span>{missingTypesExpanded ? 'Riduci' : 'Espandi'}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      missingTypesExpanded ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {!missingTypesExpanded && missingTypesAnalysis.recommendations.length > 0 && (
+              <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  Top tipi consigliati:
+                </span>
+                {missingTypesAnalysis.recommendations.slice(0, 3).map((rec, idx) => (
+                  <span
+                    key={`mini-rec-${rec.types.join('-')}`}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/70"
+                  >
+                    <span className="font-mono tabular-nums text-[10px] font-bold text-slate-400">
+                      #{idx + 1}
+                    </span>
+                    {rec.types.map((tp) => (
+                      <TypeBadge key={tp} type={tp} size="xs" compact />
+                    ))}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {missingTypesExpanded && (
+              <div className="space-y-4">
+                {/* Identified BB2 Defensive Threat Gaps */}
+                {missingTypesAnalysis.threatGaps.length === 0 ? (
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>
+                      Ottimo bilanciamento difensivo! Nessuna minaccia comune di Blaze Black 2 colpisce gravemente il team senza risposta.
+                      {missingTypesAnalysis.uncoveredDefensiveTypes.length > 0 &&
+                        ` (Mancano solo resistenze dirette a: ${missingTypesAnalysis.uncoveredDefensiveTypes.join(', ')})`}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Falle Difensive Rilevate ({missingTypesAnalysis.threatGaps.length})
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      {missingTypesAnalysis.threatGaps.slice(0, 6).map((gap) => (
+                        <div
+                          key={`gap-${gap.type}`}
+                          className={`p-3 rounded-xl border text-xs space-y-1 ${
+                            gap.severity === 'critico'
+                              ? 'bg-red-500/[0.05] border-red-500/35'
+                              : 'bg-amber-500/[0.05] border-amber-500/30'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <TypeBadge type={gap.type} size="xs" />
+                              <span
+                                className={`text-[11px] font-bold ${
+                                  gap.severity === 'critico'
+                                    ? 'text-red-700 dark:text-red-300'
+                                    : 'text-amber-700 dark:text-amber-300'
+                                }`}
+                              >
+                                {gap.severity === 'critico' ? 'Falla Critica' : 'Attenzione'}
+                              </span>
+                            </div>
+                            <span className="font-mono tabular-nums text-[11px] text-slate-600 dark:text-slate-300">
+                              {gap.weak4x > 0 ? `${gap.weak4x}× (4x) ` : ''}
+                              {gap.weak2x > 0 ? `${gap.weak2x}× (2x)` : ''}
+                              {' · '}
+                              {gap.resistAndImmune} res.
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                            {gap.bb2Reason}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommended Missing Types & Concrete BB2 Redux Pokémon */}
+                {missingTypesAnalysis.recommendations.length > 0 && (
+                  <div className="space-y-2.5 pt-1">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Tipi di Pokémon Consigliati da Aggiungere ({members.length < 6 ? `${6 - members.length} slot liberi` : 'per eventuale sostituzione'})
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Ordinati per copertura dei buchi senza aggravare le debolezze attuali
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {missingTypesAnalysis.recommendations.map((rec, idx) => (
+                        <div
+                          key={`rec-${rec.types.join('-')}`}
+                          className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/45 border border-slate-200/90 dark:border-slate-800 space-y-2.5"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono tabular-nums text-[11px] font-bold text-slate-400 mr-0.5">
+                                #{idx + 1}
+                              </span>
+                              {rec.types.map((tp) => (
+                                <TypeBadge key={tp} type={tp} size="xs" />
+                              ))}
+                            </div>
+                            <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                              {rec.coveredGaps.length > 0
+                                ? `Copre ${rec.coveredGaps.length} ${rec.coveredGaps.length === 1 ? 'falla' : 'falle'}`
+                                : `+${rec.extraCoveredTypes.length} res.`}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-700 dark:text-slate-200 leading-snug">
+                            {rec.summaryReason}
+                          </p>
+
+                          {rec.cautionWeaknesses.length > 0 && (
+                            <div className="text-[11px] text-amber-700 dark:text-amber-400">
+                              Nota: condivide debolezza a {rec.cautionWeaknesses.join(', ')}.
+                            </div>
+                          )}
+
+                          {rec.examplePokemon.length > 0 && (
+                            <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                              <div className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+                                Opzioni consigliate in BB2 Redux:
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {rec.examplePokemon.map((ex) => (
+                                  <div
+                                    key={ex.speciesId}
+                                    className="flex items-center gap-1.5 pr-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800"
+                                  >
+                                    <PokemonArtwork
+                                      speciesId={ex.speciesId}
+                                      spriteId={ex.spriteId}
+                                      name={ex.name}
+                                      primaryType={ex.types[0]}
+                                      size="sm"
+                                    />
+                                    <div className="min-w-0">
+                                      <div className="text-[11px] font-bold text-slate-900 dark:text-white leading-tight">
+                                        {ex.name}
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+                                        BST {ex.bst}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Mobile-Friendly Defense Chart (Weaknesses vs Resistances & Immunities) */}
           <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">

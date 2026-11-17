@@ -1,7 +1,7 @@
 import { BB2_POKEMON, BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
 import { MOVES_BY_ID, MOVES_LIST } from '../data/moves';
 import { NATURES } from '../data/naturesAndItems';
-import { PokemonSpecies, PokemonType, SavedTeam, StatKey, TeamCategory, TeamMember } from '../types/pokemon';
+import { BattleFormat, PokemonSpecies, PokemonType, SavedTeam, StatKey, TeamCategory, TeamMember } from '../types/pokemon';
 
 export type TeamPresetType = 'serperior' | 'samurott' | 'fairy' | 'rain' | 'sun' | 'empty';
 
@@ -52,6 +52,7 @@ export function createStarterTeam(
   customOptions?: {
     name?: string;
     category?: TeamCategory;
+    battleFormat?: BattleFormat;
     monotype?: PokemonType;
     mode?: 'Standard' | 'Challenge Mode';
     fixedId?: string;
@@ -59,11 +60,13 @@ export function createStarterTeam(
 ): SavedTeam {
   const nextId =
     customOptions?.fixedId || `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
+  const battleFormat: BattleFormat = customOptions?.battleFormat || 'Singolo';
   if (preset === 'empty') {
     return {
       id: nextId,
       name: customOptions?.name || 'Nuova Squadra Redux',
       category: customOptions?.category || 'Run Principale',
+      battleFormat,
       monotype: customOptions?.monotype,
       mode: customOptions?.mode || 'Challenge Mode',
       updatedAt: Date.now(),
@@ -77,6 +80,7 @@ export function createStarterTeam(
       id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
       name: customOptions?.name || 'Monotype Folletto Redux',
       category: customOptions?.category || 'Monotype',
+      battleFormat,
       monotype: 'Folletto',
       mode: 'Challenge Mode',
       notes: 'Squadra Monotype Folletto per Blaze Black 2 Redux Complete.',
@@ -94,6 +98,7 @@ export function createStarterTeam(
       id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
       name: customOptions?.name || 'Squadra Pioggia & Volt-Turn',
       category: customOptions?.category || 'Meteo / Strategia',
+      battleFormat,
       mode: 'Challenge Mode',
       notes: 'Core Pioggia con Samurott Acqua/Lotta, Kingdra, Rotom e Flygon Coleottero/Drago.',
       updatedAt: Date.now(),
@@ -110,6 +115,7 @@ export function createStarterTeam(
       id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
       name: customOptions?.name || 'Team Sole (Ninetales Folletto)',
       category: customOptions?.category || 'Meteo / Strategia',
+      battleFormat,
       mode: 'Challenge Mode',
       notes: 'Ninetales Fuoco/Folletto Drought + Emboar Fuoco/Terra + Venusaur Clorofilla.',
       updatedAt: Date.now(),
@@ -126,6 +132,7 @@ export function createStarterTeam(
       id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
       name: customOptions?.name || 'Offensiva Unima (Samurott)',
       category: customOptions?.category || 'Challenge Mode',
+      battleFormat,
       mode: 'Challenge Mode',
       updatedAt: Date.now(),
       members: ids.map((id) => {
@@ -171,7 +178,8 @@ export function createStarterTeam(
     id: nextId,
     name: customOptions?.name || 'Run Principale Redux',
     category: customOptions?.category || 'Run Principale',
-    mode: 'Challenge Mode',
+    battleFormat,
+    mode: customOptions?.mode || 'Challenge Mode',
     notes: 'Team bilanciato BB2 Redux con Serperior Erba/Drago, Azumarill Acqua/Folletto e Flygon Coleottero/Drago.',
     updatedAt: Date.now(),
     members: [serperior, azumarill, chandelure, excadrill, flygon, null],
@@ -337,6 +345,7 @@ export function encodeSharedTeam(team: SavedTeam): string {
   const compact = {
     n: team.name.slice(0, 80),
     c: team.category,
+    bf: team.battleFormat || 'Singolo',
     mt: team.monotype,
     m: team.mode,
     nt: team.notes?.slice(0, 500),
@@ -379,6 +388,7 @@ export function decodeSharedTeam(encoded: string): SavedTeam | null {
     const data = JSON.parse(json) as {
       n?: string;
       c?: TeamCategory;
+      bf?: BattleFormat;
       mt?: PokemonType;
       m?: 'Standard' | 'Challenge Mode';
       nt?: string;
@@ -429,6 +439,7 @@ export function decodeSharedTeam(encoded: string): SavedTeam | null {
       id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
       name: String(data.n || 'Squadra Condivisa').slice(0, 80),
       category,
+      battleFormat: data.bf === 'Doppio' ? 'Doppio' : 'Singolo',
       monotype: category === 'Monotype' ? data.mt : undefined,
       mode: data.m === 'Standard' ? 'Standard' : 'Challenge Mode',
       notes: data.nt ? String(data.nt).slice(0, 500) : undefined,

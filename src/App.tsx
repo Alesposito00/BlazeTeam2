@@ -20,6 +20,7 @@ import {
 } from './data/competitiveTeams';
 import {
   AppTab,
+  BattleFormat,
   GameProgress,
   PokemonSpecies,
   PokemonType,
@@ -97,6 +98,7 @@ function loadInitialTeams(): SavedTeam[] {
         return parsed.map((t: SavedTeam) => ({
           ...t,
           category: t.category || 'Run Principale',
+          battleFormat: t.battleFormat === 'Doppio' ? 'Doppio' : 'Singolo',
         }));
       }
     }
@@ -292,6 +294,7 @@ export default function App() {
     category: TeamCategory;
     monotype?: PokemonType;
     mode: 'Standard' | 'Challenge Mode';
+    battleFormat?: BattleFormat;
     preset: TeamPresetType;
   }) => {
     const created = createStarterTeam(options.preset, {
@@ -299,6 +302,7 @@ export default function App() {
       category: options.category,
       monotype: options.monotype,
       mode: options.mode,
+      battleFormat: options.battleFormat,
     });
     setTeams((prev) => [created, ...prev]);
     handleSelectActiveTeam(created.id);
@@ -506,6 +510,9 @@ export default function App() {
                 updateActiveTeam((t) => ({ ...t, category, monotype }))
               }
               onToggleMode={(mode) => updateActiveTeam((t) => ({ ...t, mode }))}
+              onToggleBattleFormat={(battleFormat) =>
+                updateActiveTeam((t) => ({ ...t, battleFormat }))
+              }
               onDeleteTeam={handleDeleteTeam}
               onOpenSlotEditor={(idx) => setEditingSlot(idx)}
               onOpenPokedexForSlot={(idx) => {
@@ -551,7 +558,13 @@ export default function App() {
           )}
 
           {activeTab === 'analysis' && (
-            <AnalysisView team={activeTeam} onGoToTeam={() => navigateTo('team')} />
+            <AnalysisView
+              team={activeTeam}
+              onGoToTeam={() => navigateTo('team')}
+              onToggleBattleFormat={(battleFormat) =>
+                updateActiveTeam((t) => ({ ...t, battleFormat }))
+              }
+            />
           )}
 
           {activeTab === 'bosses' && (

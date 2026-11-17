@@ -746,6 +746,10 @@ export function buildSavedTeamFromCompetitiveSuggestion(
     id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
     name: `${suggestion.title}`.slice(0, 32),
     category: 'Lega & Post-Game',
+    battleFormat:
+      suggestion.competition === 'Metro Doppio' || suggestion.id === 'pwt-trick-room'
+        ? 'Doppio'
+        : 'Singolo',
     mode: 'Challenge Mode',
     notes: `[${suggestion.competition} · ${suggestion.formatLabel}] ${suggestion.strategySummary}`,
     updatedAt: Date.now(),

@@ -100,10 +100,13 @@ export type TeamCategory =
   | 'Meteo / Strategia'
   | 'Lega & Post-Game';
 
+export type BattleFormat = 'Singolo' | 'Doppio';
+
 export interface SavedTeam {
   id: string;
   name: string;
   category: TeamCategory;
+  battleFormat?: BattleFormat;
   monotype?: PokemonType;
   mode: 'Standard' | 'Challenge Mode';
   notes?: string;

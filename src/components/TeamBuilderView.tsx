@@ -1,24 +1,31 @@
 import React, { useMemo, useState } from 'react';
 import {
+  AlertTriangle,
+  ArrowLeftRight,
   ArrowRight,
   Check,
+  Compass,
   Copy,
   Edit3,
   FileCode2,
   Moon,
   Plus,
   Share2,
+  ShieldAlert,
   Sparkles,
   Sun,
+  Swords,
   Trash2,
   Upload,
+  Users,
   X,
 } from 'lucide-react';
 import { BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
 import { MOVES_BY_ID } from '../data/moves';
 import { ITEMS_BY_NAME, NATURES_BY_NAME } from '../data/naturesAndItems';
+import { analyzeBattleTactics } from '../data/teamAdvisor';
 import { ALL_TYPES, analyzeTeamDefense, getBST, TYPE_STYLES } from '../data/typeChart';
-import { PokemonType, SavedTeam, TeamCategory, TeamMember } from '../types/pokemon';
+import { BattleFormat, PokemonType, SavedTeam, TeamCategory, TeamMember } from '../types/pokemon';
 import {
   exportTeamToShowdown,
   importTeamFromShowdown,
@@ -35,6 +42,7 @@ interface TeamBuilderViewProps {
   onCreateTeam: (preset: TeamPresetType) => void;
   onRenameTeam: (name: string) => void;
   onUpdateCategory: (category: TeamCategory, monotype?: PokemonType) => void;
+  onToggleBattleFormat: (format: BattleFormat) => void;
   onToggleMode: (mode: 'Standard' | 'Challenge Mode') => void;
   onDeleteTeam: (id: string) => void;
   onOpenSlotEditor: (slotIndex: number) => void;
@@ -54,6 +62,7 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
   onCreateTeam,
   onRenameTeam,
   onUpdateCategory,
+  onToggleBattleFormat,
   onToggleMode,
   onDeleteTeam,
   onOpenSlotEditor,
@@ -72,6 +81,7 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [tacticsTab, setTacticsTab] = useState<'switches' | 'moves'>('switches');
 
   const filledMembers = useMemo(
     () => activeTeam.members.filter((m): m is TeamMember => m !== null),
@@ -95,6 +105,13 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
       .sort((a, b) => a.score - b.score)
       .slice(0, 4);
   }, [filledMembers]);
+
+  const battleFormat: BattleFormat = activeTeam.battleFormat || 'Singolo';
+
+  const battleTactics = useMemo(
+    () => analyzeBattleTactics(filledMembers, BB2_POKEMON_BY_ID, battleFormat),
+    [filledMembers, battleFormat]
+  );
 
   const exportedText = useMemo(() => exportTeamToShowdown(activeTeam), [activeTeam]);
 
@@ -242,8 +259,35 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
             )}
           </div>
 
-          {/* Right Toolbar Actions: Mode, Showdown, Theme */}
+          {/* Right Toolbar Actions: Format, Mode, Showdown, Theme */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Battle Format Preference: Singolo vs Doppio */}
+            <div
+              className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800"
+              role="group"
+              aria-label="Preferenza formato lotta"
+            >
+              {(
+                [
+                  { id: 'Singolo' as BattleFormat, label: 'Lotta in Singolo' },
+                  { id: 'Doppio' as BattleFormat, label: 'Lotta in Doppio' },
+                ] as const
+              ).map((fmt) => (
+                <button
+                  key={fmt.id}
+                  type="button"
+                  onClick={() => onToggleBattleFormat(fmt.id)}
+                  className={`min-h-[36px] px-3 rounded-lg text-xs font-semibold transition whitespace-nowrap shrink-0 ${
+                    battleFormat === fmt.id
+                      ? 'bg-red-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {fmt.label}
+                </button>
+              ))}
+            </div>
+
             <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
               {(['Standard', 'Challenge Mode'] as const).map((m) => (
                 <button
@@ -432,14 +476,14 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
               <div className="text-[11px] text-slate-500 dark:text-slate-400">Media BST</div>
-              <div className="font-mono text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="font-mono tabular-nums text-xl font-bold text-slate-900 dark:text-white mt-0.5">
                 {avgBst || '—'}
               </div>
             </div>
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">Modalità</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">Formato Lotta</div>
               <div className="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
-                {activeTeam.mode}
+                {battleFormat} · {activeTeam.mode === 'Challenge Mode' ? 'Challenge' : 'Std'}
               </div>
             </div>
           </div>
@@ -524,6 +568,286 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
           </div>
         </aside>
       </div>
+
+      {/* Live Battle Tactical Advisor: Singolo vs Doppio */}
+      {filledMembers.length > 0 && (
+        <section className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="space-y-0.5">
+              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <span className="font-semibold text-red-600 dark:text-red-400">
+                  {battleFormat === 'Singolo' ? 'Squadra per Lotta in Singolo' : 'Squadra per Lotta in Doppio'}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>{filledMembers.length} membri analizzati</span>
+              </div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Suggerimenti Tattici in Lotta: Cambi &amp; Mosse Preferibili
+              </h2>
+            </div>
+
+            {/* Sub-switch: Cambi vs Mosse Preferibili */}
+            <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setTacticsTab('switches')}
+                className={`min-h-[38px] px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
+                  tacticsTab === 'switches'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <span>Cambi Anti-Debolezze</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTacticsTab('moves')}
+                className={`min-h-[38px] px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition whitespace-nowrap shrink-0 ${
+                  tacticsTab === 'moves'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Swords className="w-3.5 h-3.5" />
+                <span>Mosse Preferibili</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Lead & Format Highlights */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 space-y-1">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Compass className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                <span>Apertura &amp; Lead</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                {battleTactics.leadSuggestion}
+              </p>
+            </div>
+
+            <div className="lg:col-span-2 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 space-y-1.5">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                <span>
+                  {battleFormat === 'Doppio'
+                    ? 'Sinergia Lotta in Doppio (2v2)'
+                    : 'Gestione Turni & Pivot (Singolo 1v1)'}
+                </span>
+              </div>
+              <ul className="space-y-1 text-slate-600 dark:text-slate-300">
+                {battleTactics.formatHighlights.map((hl, idx) => (
+                  <li key={idx} className="leading-snug">
+                    • {hl}
+                  </li>
+                ))}
+                {battleTactics.spreadWarnings.map((sw, idx) => (
+                  <li key={`sw-${idx}`} className="leading-snug text-amber-700 dark:text-amber-300 font-medium">
+                    • {sw}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Doubles Recommended Pairs */}
+          {battleFormat === 'Doppio' && battleTactics.doublePairs.length > 0 && (
+            <div className="space-y-2 pt-1">
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Coppie Consigliate in Campo (Doppio 2v2)
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                {battleTactics.doublePairs.map((pair, idx) => (
+                  <div
+                    key={`${pair.memberASpeciesId}-${pair.memberBSpeciesId}-${idx}`}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <PokemonArtwork
+                        speciesId={pair.memberASpeciesId}
+                        spriteId={pair.memberASpriteId}
+                        name={pair.memberAName}
+                        primaryType="Normale"
+                        size="sm"
+                      />
+                      <span className="text-xs font-bold text-slate-400">+</span>
+                      <PokemonArtwork
+                        speciesId={pair.memberBSpeciesId}
+                        spriteId={pair.memberBSpriteId}
+                        name={pair.memberBName}
+                        primaryType="Normale"
+                        size="sm"
+                      />
+                      <div className="min-w-0 text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {pair.memberAName} + {pair.memberBName}
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                      {pair.synergyPoints.slice(0, 2).join(' · ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Per-Pokémon Switch & Preferred Moves Advice */}
+          {tacticsTab === 'switches' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {battleTactics.memberTactics.map((mt) => (
+                <div
+                  key={`tactic-sw-${mt.memberUid}`}
+                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <PokemonArtwork
+                        speciesId={mt.speciesId}
+                        spriteId={mt.spriteId}
+                        name={mt.memberName}
+                        primaryType={mt.types[0]}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                          {mt.memberName}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          {mt.types.map((tp) => (
+                            <TypeBadge key={tp} type={tp} size="xs" compact />
+                          ))}
+                          <span aria-hidden="true">·</span>
+                          <span className="truncate">{mt.roleLabel}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {mt.uncoveredWeaknessesCount > 0 && (
+                      <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 inline-flex items-center gap-1 shrink-0">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>{mt.uncoveredWeaknessesCount} senza cambio</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {mt.weaknessSwitches.length === 0 ? (
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                      Nessuna debolezza difensiva: non necessita di cambi forzati per tipo.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-slate-200/70 dark:divide-slate-800">
+                      {mt.weaknessSwitches.map((ws) => (
+                        <div
+                          key={`${mt.memberUid}-${ws.weaknessType}`}
+                          className="py-2 first:pt-0 last:pb-0 space-y-1 text-xs"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                Contro
+                              </span>
+                              <TypeBadge type={ws.weaknessType} size="xs" />
+                              <span
+                                className={`font-mono tabular-nums text-[11px] font-bold ${
+                                  ws.memberIncomingMult >= 3.5
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-amber-700 dark:text-amber-300'
+                                }`}
+                              >
+                                {ws.memberIncomingMult}×
+                              </span>
+                            </div>
+                            {ws.bestSwitches.length > 0 && (
+                              <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 truncate">
+                                Cambio:{' '}
+                                {ws.bestSwitches
+                                  .map(
+                                    (s) =>
+                                      `${s.memberName} (${
+                                        s.incomingMultiplier === 0
+                                          ? '0×'
+                                          : s.incomingMultiplier <= 0.3
+                                            ? '¼×'
+                                            : '½×'
+                                      })`
+                                  )
+                                  .join(' / ')}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                            {ws.actionVerdict}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {battleTactics.memberTactics.map((mt) => (
+                <div
+                  key={`tactic-mv-${mt.memberUid}`}
+                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <PokemonArtwork
+                        speciesId={mt.speciesId}
+                        spriteId={mt.spriteId}
+                        name={mt.memberName}
+                        primaryType={mt.types[0]}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                          {mt.memberName}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {mt.roleLabel} · Formato {battleFormat}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {mt.moveSuggestions.length === 0 ? (
+                    <div className="text-xs text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                      <Check className="w-4 h-4 shrink-0" />
+                      <span>
+                        Moveset già ben ottimizzato per la Lotta in {battleFormat}!
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-200/70 dark:divide-slate-800">
+                      {mt.moveSuggestions.map((ms, idx) => (
+                        <div key={idx} className="py-2 first:pt-0 last:pb-0 space-y-1 text-xs">
+                          <div className="flex items-center gap-1.5 flex-wrap font-semibold text-slate-900 dark:text-white">
+                            {ms.priority === 'alta' && (
+                              <ShieldAlert className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+                            )}
+                            <span>Preferisci: {ms.preferredMoveName}</span>
+                            {ms.currentMoveName && (
+                              <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
+                                (al posto di {ms.currentMoveName})
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                            {ms.reason}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Showdown Import/Export Modal */}
       {showShowdownModal && (
