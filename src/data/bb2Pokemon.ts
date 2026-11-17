@@ -20425,6 +20425,7 @@ export const BB2_POKEMON: PokemonSpecies[] = [
   },
   {
     "id": 479,
+    "dexNumber": 479,
     "name": "Rotom",
     "region": "Sinnoh",
     "types": [
@@ -20449,13 +20450,211 @@ export const BB2_POKEMON: PokemonSpecies[] = [
     "learnset": [
       "thunderbolt",
       "volt-switch",
+      "discharge",
       "shadow-ball",
       "will-o-wisp",
       "hidden-power-ice",
       "thunder-wave",
-      "trick-room"
+      "trick-room",
+      "protect",
+      "substitute"
     ],
     "roleHint": "Attaccante Speciale Elettro/Spettro"
+  },
+  {
+    "id": 10008,
+    "dexNumber": 479,
+    "spriteId": 10008,
+    "name": "Rotom-Heat",
+    "region": "Sinnoh",
+    "types": [
+      "Elettro",
+      "Fuoco"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      {
+        "name": "Levitate",
+        "description": "Immunità alle mosse di tipo Terra."
+      }
+    ],
+    "bb2Modified": false,
+    "learnset": [
+      "overheat",
+      "thunderbolt",
+      "volt-switch",
+      "discharge",
+      "shadow-ball",
+      "will-o-wisp",
+      "hidden-power-ice",
+      "thunder-wave",
+      "protect",
+      "substitute"
+    ],
+    "roleHint": "Forma Forno · Pivot Elettro/Fuoco"
+  },
+  {
+    "id": 10009,
+    "dexNumber": 479,
+    "spriteId": 10009,
+    "name": "Rotom-Wash",
+    "region": "Sinnoh",
+    "types": [
+      "Elettro",
+      "Acqua"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      {
+        "name": "Levitate",
+        "description": "Immunità alle mosse di tipo Terra."
+      }
+    ],
+    "bb2Modified": false,
+    "learnset": [
+      "hydro-pump",
+      "thunderbolt",
+      "volt-switch",
+      "discharge",
+      "shadow-ball",
+      "will-o-wisp",
+      "hidden-power-ice",
+      "thunder-wave",
+      "protect",
+      "substitute"
+    ],
+    "roleHint": "Forma Lavatrice · Pivot Bulky Elettro/Acqua"
+  },
+  {
+    "id": 10010,
+    "dexNumber": 479,
+    "spriteId": 10010,
+    "name": "Rotom-Frost",
+    "region": "Sinnoh",
+    "types": [
+      "Elettro",
+      "Ghiaccio"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      {
+        "name": "Levitate",
+        "description": "Immunità alle mosse di tipo Terra."
+      }
+    ],
+    "bb2Modified": false,
+    "learnset": [
+      "blizzard",
+      "thunderbolt",
+      "volt-switch",
+      "discharge",
+      "shadow-ball",
+      "will-o-wisp",
+      "hidden-power-ice",
+      "thunder-wave",
+      "protect",
+      "substitute"
+    ],
+    "roleHint": "Forma Frigo · BoltBeam Elettro/Ghiaccio"
+  },
+  {
+    "id": 10011,
+    "dexNumber": 479,
+    "spriteId": 10011,
+    "name": "Rotom-Fan",
+    "region": "Sinnoh",
+    "types": [
+      "Elettro",
+      "Volante"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      {
+        "name": "Levitate",
+        "description": "Immunità alle mosse di tipo Terra."
+      }
+    ],
+    "bb2Modified": false,
+    "learnset": [
+      "air-slash",
+      "thunderbolt",
+      "volt-switch",
+      "discharge",
+      "shadow-ball",
+      "will-o-wisp",
+      "hidden-power-ice",
+      "thunder-wave",
+      "protect",
+      "substitute"
+    ],
+    "roleHint": "Forma Ventilatore · Pivot Elettro/Volante"
+  },
+  {
+    "id": 10012,
+    "dexNumber": 479,
+    "spriteId": 10012,
+    "name": "Rotom-Mow",
+    "region": "Sinnoh",
+    "types": [
+      "Elettro",
+      "Erba"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      {
+        "name": "Levitate",
+        "description": "Immunità alle mosse di tipo Terra."
+      }
+    ],
+    "bb2Modified": false,
+    "learnset": [
+      "leaf-storm",
+      "thunderbolt",
+      "volt-switch",
+      "discharge",
+      "shadow-ball",
+      "will-o-wisp",
+      "hidden-power-ice",
+      "thunder-wave",
+      "protect",
+      "substitute"
+    ],
+    "roleHint": "Forma Tosaerba · Pivot Elettro/Erba"
   },
   {
     "id": 480,
@@ -27587,3 +27786,17 @@ export const BB2_POKEMON: PokemonSpecies[] = [
 export const BB2_POKEMON_BY_ID: Record<number, PokemonSpecies> = Object.fromEntries(
   BB2_POKEMON.map((p) => [p.id, p])
 );
+
+export const ROTOM_FORM_IDS = [479, 10008, 10009, 10010, 10011, 10012] as const;
+
+export const ROTOM_FORM_META: Record<
+  number,
+  { label: string; appliance: string; signatureMoveId: string | null }
+> = {
+  479: { label: 'Base', appliance: 'Forma Originale', signatureMoveId: null },
+  10008: { label: 'Calore', appliance: 'Forno (Heat)', signatureMoveId: 'overheat' },
+  10009: { label: 'Lavaggio', appliance: 'Lavatrice (Wash)', signatureMoveId: 'hydro-pump' },
+  10010: { label: 'Gelo', appliance: 'Frigorifero (Frost)', signatureMoveId: 'blizzard' },
+  10011: { label: 'Vortice', appliance: 'Ventilatore (Fan)', signatureMoveId: 'air-slash' },
+  10012: { label: 'Taglio', appliance: 'Tosaerba (Mow)', signatureMoveId: 'leaf-storm' },
+};

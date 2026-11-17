@@ -93,14 +93,14 @@ export function createStarterTeam(
   }
 
   if (preset === 'rain') {
-    const ids = [503, 230, 479, 598, 537, 330];
+    const ids = [503, 230, 10009, 598, 537, 330];
     return {
       id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
       name: customOptions?.name || 'Squadra Pioggia & Volt-Turn',
       category: customOptions?.category || 'Meteo / Strategia',
       battleFormat,
       mode: 'Challenge Mode',
-      notes: 'Core Pioggia con Samurott Acqua/Lotta, Kingdra, Rotom e Flygon Coleottero/Drago.',
+      notes: 'Core Pioggia con Samurott Acqua/Lotta, Kingdra, Rotom-Wash e Flygon Coleottero/Drago.',
       updatedAt: Date.now(),
       members: ids.map((id) => {
         const sp = BB2_POKEMON_BY_ID[id];
@@ -281,8 +281,28 @@ export function importTeamFromShowdown(text: string): TeamMember[] {
       speciesName = parenMatch[2].trim();
     }
 
+    const ROTOM_ALIASES: Record<string, string> = {
+      'rotom-h': 'Rotom-Heat',
+      'rotom heat': 'Rotom-Heat',
+      'rotom-calore': 'Rotom-Heat',
+      'rotom-w': 'Rotom-Wash',
+      'rotom wash': 'Rotom-Wash',
+      'rotom-lavaggio': 'Rotom-Wash',
+      'rotom-f': 'Rotom-Frost',
+      'rotom frost': 'Rotom-Frost',
+      'rotom-gelo': 'Rotom-Frost',
+      'rotom-s': 'Rotom-Fan',
+      'rotom fan': 'Rotom-Fan',
+      'rotom-vortice': 'Rotom-Fan',
+      'rotom-c': 'Rotom-Mow',
+      'rotom mow': 'Rotom-Mow',
+      'rotom-taglio': 'Rotom-Mow',
+    };
+    const normalizedSpeciesName =
+      ROTOM_ALIASES[speciesName.toLowerCase()] ?? speciesName;
+
     const sp = BB2_POKEMON.find(
-      (p) => p.name.toLowerCase() === speciesName.toLowerCase()
+      (p) => p.name.toLowerCase() === normalizedSpeciesName.toLowerCase()
     );
     if (!sp) continue;
 

@@ -51,6 +51,7 @@ export interface AbilityInfo {
 
 export interface PokemonSpecies {
   id: number;
+  dexNumber?: number;
   spriteId?: number;
   name: string;
   region: 'Kanto' | 'Johto' | 'Hoenn' | 'Sinnoh' | 'Unima';

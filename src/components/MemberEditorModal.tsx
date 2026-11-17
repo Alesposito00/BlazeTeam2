@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, ArrowLeftRight, Check, ChevronDown, Search, ShieldAlert, Sparkles, Trash2, X } from 'lucide-react';
-import { BB2_POKEMON_BY_ID } from '../data/bb2Pokemon';
+import { BB2_POKEMON_BY_ID, ROTOM_FORM_IDS, ROTOM_FORM_META } from '../data/bb2Pokemon';
 import { MOVES_BY_ID, MOVES_LIST } from '../data/moves';
 import { ITEMS, NATURES, NATURES_BY_NAME } from '../data/naturesAndItems';
 import {
@@ -45,8 +45,8 @@ export const MemberEditorModal: React.FC<MemberEditorModalProps> = ({
   onSwapSpecies,
   onClose,
 }) => {
-  const species = BB2_POKEMON_BY_ID[member.speciesId];
   const [draft, setDraft] = useState<TeamMember>(() => structuredClone(member));
+  const species = BB2_POKEMON_BY_ID[draft.speciesId];
   const [activeTab, setActiveTab] = useState<'stats' | 'moves' | 'details'>('stats');
   const [editingMoveSlot, setEditingMoveSlot] = useState<number>(0);
   const [moveSearch, setMoveSearch] = useState('');
@@ -147,6 +147,46 @@ export const MemberEditorModal: React.FC<MemberEditorModalProps> = ({
     }
   };
 
+  const switchRotomForm = (nextFormId: number) => {
+    const nextSpecies = BB2_POKEMON_BY_ID[nextFormId];
+    if (!nextSpecies || nextFormId === draft.speciesId) return;
+
+    const oldSig = ROTOM_FORM_META[draft.speciesId]?.signatureMoveId ?? null;
+    const newSig = ROTOM_FORM_META[nextFormId]?.signatureMoveId ?? null;
+
+    setDraft((prev) => {
+      const nextMoves: [string | null, string | null, string | null, string | null] = [...prev.moves];
+      if (oldSig && newSig) {
+        const idx = nextMoves.indexOf(oldSig);
+        if (idx !== -1) {
+          nextMoves[idx] = newSig;
+        } else if (!nextMoves.includes(newSig)) {
+          const emptyIdx = nextMoves.indexOf(null);
+          if (emptyIdx !== -1) nextMoves[emptyIdx] = newSig;
+        }
+      } else if (oldSig && !newSig) {
+        const idx = nextMoves.indexOf(oldSig);
+        if (idx !== -1) {
+          nextMoves[idx] = 'shadow-ball';
+        }
+      } else if (!oldSig && newSig && !nextMoves.includes(newSig)) {
+        const emptyIdx = nextMoves.indexOf(null);
+        if (emptyIdx !== -1) {
+          nextMoves[emptyIdx] = newSig;
+        } else {
+          nextMoves[0] = newSig;
+        }
+      }
+
+      return {
+        ...prev,
+        speciesId: nextFormId,
+        ability: nextSpecies.abilities[0]?.name ?? prev.ability,
+        moves: nextMoves,
+      };
+    });
+  };
+
   if (!species) return null;
 
   return (
@@ -178,7 +218,7 @@ export const MemberEditorModal: React.FC<MemberEditorModalProps> = ({
                 <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                   <span className="font-mono font-semibold">Slot {slotIndex + 1}</span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono">#{String(species.id).padStart(3, '0')}</span>
+                  <span className="font-mono">#{String(species.dexNumber ?? species.id).padStart(3, '0')}</span>
                   {species.bb2Modified && (
                     <>
                       <span aria-hidden="true">·</span>
@@ -220,6 +260,39 @@ export const MemberEditorModal: React.FC<MemberEditorModalProps> = ({
               </button>
             </div>
           </div>
+
+          {(ROTOM_FORM_IDS as readonly number[]).includes(draft.speciesId) && (
+            <div className="mt-3 pt-2.5 border-t border-slate-200/70 dark:border-slate-700/60 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                <span>Forma di Rotom (6 scelte)</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {ROTOM_FORM_META[draft.speciesId]?.appliance}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                {ROTOM_FORM_IDS.map((formId) => {
+                  const formSp = BB2_POKEMON_BY_ID[formId];
+                  const meta = ROTOM_FORM_META[formId];
+                  if (!formSp || !meta) return null;
+                  const active = draft.speciesId === formId;
+                  return (
+                    <button
+                      key={formId}
+                      type="button"
+                      onClick={() => switchRotomForm(formId)}
+                      className={`min-h-[34px] px-2 py-1 rounded-lg text-[11px] font-semibold border transition flex items-center justify-center gap-1 ${
+                        active
+                          ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                          : 'bg-white/80 dark:bg-slate-900/80 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-red-400'
+                      }`}
+                    >
+                      <span className="truncate">{meta.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Segmented Editor Tabs */}
           <div className="mt-4 grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800/80">

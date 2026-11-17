@@ -406,7 +406,7 @@ export const TeamBuilderView: React.FC<TeamBuilderViewProps> = ({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                         <span className="font-mono font-semibold">
-                          #{String(sp.id).padStart(3, '0')} · Lv.{member.level}
+                          #{String(sp.dexNumber ?? sp.id).padStart(3, '0')} · Lv.{member.level}
                         </span>
                         {member.shiny && (
                           <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />

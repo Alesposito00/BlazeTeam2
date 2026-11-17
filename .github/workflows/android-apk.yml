@@ -16,8 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
 
       - name: Setup Java 21
         uses: actions/setup-java@v4
@@ -27,7 +26,11 @@ jobs:
 
       - name: Install dependencies & sync Capacitor Android
         run: |
-          npm ci
+          if [ -f package-lock.json ]; then
+            npm ci --legacy-peer-deps
+          else
+            npm install --legacy-peer-deps
+          fi
           npm run build:android
 
       - name: Build Debug APK

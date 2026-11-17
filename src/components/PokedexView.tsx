@@ -11,7 +11,12 @@ import {
   Swords,
   X,
 } from 'lucide-react';
-import { BB2_POKEMON } from '../data/bb2Pokemon';
+import {
+  BB2_POKEMON,
+  BB2_POKEMON_BY_ID,
+  ROTOM_FORM_IDS,
+  ROTOM_FORM_META,
+} from '../data/bb2Pokemon';
 import { MOVES_BY_ID } from '../data/moves';
 import {
   ALL_TYPES,
@@ -95,12 +100,20 @@ export const PokedexView: React.FC<PokedexViewProps> = ({
       if (onlyModified && !p.bb2Modified) return false;
       if (typeFilter !== 'Tutti' && !p.types.includes(typeFilter)) return false;
       if (q) {
-        const idStr = String(p.id).padStart(3, '0');
+        const dexNum = p.dexNumber ?? p.id;
+        const idStr = String(dexNum).padStart(3, '0');
+        const formMeta = ROTOM_FORM_META[p.id];
         const matchesName = p.name.toLowerCase().includes(q);
-        const matchesId = idStr.includes(q) || String(p.id) === q;
+        const matchesId = idStr.includes(q) || String(dexNum) === q;
         const matchesAbility = p.abilities.some((a) => a.name.toLowerCase().includes(q));
         const matchesRole = p.roleHint.toLowerCase().includes(q);
-        if (!matchesName && !matchesId && !matchesAbility && !matchesRole) return false;
+        const matchesForm =
+          formMeta &&
+          (formMeta.label.toLowerCase().includes(q) ||
+            formMeta.appliance.toLowerCase().includes(q));
+        if (!matchesName && !matchesId && !matchesAbility && !matchesRole && !matchesForm) {
+          return false;
+        }
       }
       return true;
     }).sort((a, b) => {
@@ -108,7 +121,7 @@ export const PokedexView: React.FC<PokedexViewProps> = ({
       if (sortBy === 'spe') return b.baseStats.spe - a.baseStats.spe;
       if (sortBy === 'atk') return b.baseStats.atk - a.baseStats.atk;
       if (sortBy === 'spa') return b.baseStats.spa - a.baseStats.spa;
-      return a.id - b.id;
+      return (a.dexNumber ?? a.id) - (b.dexNumber ?? b.id) || a.id - b.id;
     });
   }, [query, typeFilter, onlyModified, sortBy]);
 
@@ -278,7 +291,7 @@ export const PokedexView: React.FC<PokedexViewProps> = ({
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                           <span className="font-mono font-semibold">
-                            #{String(p.id).padStart(3, '0')}
+                            #{String(p.dexNumber ?? p.id).padStart(3, '0')}
                           </span>
                           <span aria-hidden="true">·</span>
                           <span>{p.region}</span>
@@ -374,7 +387,7 @@ export const PokedexView: React.FC<PokedexViewProps> = ({
                   />
                   <div>
                     <div className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                      #{String(inspected.id).padStart(3, '0')} · {inspected.region} · {inspected.roleHint}
+                      #{String(inspected.dexNumber ?? inspected.id).padStart(3, '0')} · {inspected.region} · {inspected.roleHint}
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                       {inspected.name}
@@ -398,6 +411,50 @@ export const PokedexView: React.FC<PokedexViewProps> = ({
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {(ROTOM_FORM_IDS as readonly number[]).includes(inspected.id) && (
+                <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/45 border border-slate-200 dark:border-slate-800 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                      Tutte le Forme di Rotom (6 scelte)
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {ROTOM_FORM_META[inspected.id]?.appliance}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                    {ROTOM_FORM_IDS.map((formId) => {
+                      const formSp = BB2_POKEMON_BY_ID[formId];
+                      const meta = ROTOM_FORM_META[formId];
+                      if (!formSp || !meta) return null;
+                      const isCurrent = inspected.id === formId;
+                      return (
+                        <button
+                          key={formId}
+                          type="button"
+                          onClick={() => setInspected(formSp)}
+                          className={`p-1.5 rounded-xl border text-center transition flex flex-col items-center gap-1 ${
+                            isCurrent
+                              ? 'bg-red-600/10 border-red-500 text-red-700 dark:text-red-300 ring-1 ring-red-500/30'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                          }`}
+                        >
+                          <PokemonArtwork
+                            speciesId={formSp.id}
+                            spriteId={formSp.spriteId}
+                            name={formSp.name}
+                            primaryType={formSp.types[0]}
+                            size="sm"
+                          />
+                          <span className="text-[10.5px] font-bold leading-tight truncate w-full">
+                            {meta.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {inspected.bb2Modified && inspected.bb2Changes && (
                 <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-slate-800 dark:text-slate-200">
                   <span className="font-bold text-red-700 dark:text-red-400">
