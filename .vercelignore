@@ -1,0 +1,6 @@
+android/
+APK_BUILD_GUIDE.md
+*.apk
+.DS_Store
+dist/
+dev-dist/
