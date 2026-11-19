@@ -1,8 +1,10 @@
 node_modules/
 build/
 dist/
+dev-dist/
+.vercel/
 coverage/
 .DS_Store
+*.apk
 *.log
 .env*
-!.env.example

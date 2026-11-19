@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
     "module": "ESNext",
     "types": ["vite/client", "vite-plugin-pwa/client"],
     "lib": [
@@ -14,15 +12,10 @@
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
-    "allowJs": true,
     "jsx": "react-jsx",
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    },
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": ["dist", "android"]
+  "include": ["src"],
+  "exclude": ["dist", "dev-dist", "android", "node_modules"]
 }

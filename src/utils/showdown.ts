@@ -248,13 +248,6 @@ export function buildShowdownFileName(teamName: string): string {
   return `${cleaned || 'Squadra Redux'}.showdown.txt`;
 }
 
-export function parseShowdownFilenameToTeamName(fileName: string): string {
-  return fileName
-    .replace(/\.showdown\.txt$/i, '')
-    .replace(/\.txt$/i, '')
-    .trim() || 'Squadra Drive';
-}
-
 export function importTeamFromShowdown(text: string): TeamMember[] {
   const chunks = text
     .trim()
@@ -359,115 +352,5 @@ export function importTeamFromShowdown(text: string): TeamMember[] {
   }
 
   return imported;
-}
-
-export function encodeSharedTeam(team: SavedTeam): string {
-  const compact = {
-    n: team.name.slice(0, 80),
-    c: team.category,
-    bf: team.battleFormat || 'Singolo',
-    mt: team.monotype,
-    m: team.mode,
-    nt: team.notes?.slice(0, 500),
-    mb: team.members.map((mem) =>
-      mem
-        ? {
-            s: mem.speciesId,
-            nk: mem.nickname,
-            lv: mem.level,
-            ab: mem.ability,
-            it: mem.item,
-            na: mem.nature,
-            iv: mem.ivs,
-            ev: mem.evs,
-            mv: mem.moves,
-            sh: mem.shiny ? 1 : 0,
-            nt: mem.notes,
-          }
-        : null
-    ),
-  };
-  const json = JSON.stringify(compact);
-  const bytes = new TextEncoder().encode(json);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) {
-    bin += String.fromCharCode(bytes[i]);
-  }
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-export function decodeSharedTeam(encoded: string): SavedTeam | null {
-  try {
-    const padded = encoded.replace(/-/g, '+').replace(/_/g, '/');
-    const bin = atob(padded);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) {
-      bytes[i] = bin.charCodeAt(i);
-    }
-    const json = new TextDecoder().decode(bytes);
-    const data = JSON.parse(json) as {
-      n?: string;
-      c?: TeamCategory;
-      bf?: BattleFormat;
-      mt?: PokemonType;
-      m?: 'Standard' | 'Challenge Mode';
-      nt?: string;
-      mb?: Array<{
-        s: number;
-        nk?: string;
-        lv?: number;
-        ab?: string;
-        it?: string;
-        na?: string;
-        iv?: TeamMember['ivs'];
-        ev?: TeamMember['evs'];
-        mv?: TeamMember['moves'];
-        sh?: number;
-        nt?: string;
-      } | null>;
-    };
-
-    if (!Array.isArray(data.mb) || data.mb.length === 0) return null;
-
-    const category: TeamCategory = TEAM_CATEGORIES.includes(data.c as TeamCategory)
-      ? (data.c as TeamCategory)
-      : 'Run Principale';
-
-    const members: (TeamMember | null)[] = [null, null, null, null, null, null];
-    for (let i = 0; i < 6; i++) {
-      const raw = data.mb[i];
-      if (!raw || typeof raw.s !== 'number') continue;
-      const sp = BB2_POKEMON_BY_ID[raw.s];
-      if (!sp) continue;
-      const fallback = createDefaultMember(sp, raw.lv ?? 55);
-      members[i] = {
-        ...fallback,
-        nickname: String(raw.nk || '').slice(0, 40),
-        level: Math.max(1, Math.min(100, Math.round(raw.lv ?? 55))),
-        ability: String(raw.ab || fallback.ability).slice(0, 60),
-        item: String(raw.it || '').slice(0, 60),
-        nature: String(raw.na || fallback.nature).slice(0, 30),
-        ivs: raw.iv ?? fallback.ivs,
-        evs: raw.ev ?? fallback.evs,
-        moves: Array.isArray(raw.mv) && raw.mv.length === 4 ? raw.mv : fallback.moves,
-        shiny: Boolean(raw.sh),
-        notes: String(raw.nt || '').slice(0, 300),
-      };
-    }
-
-    return {
-      id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
-      name: String(data.n || 'Squadra Condivisa').slice(0, 80),
-      category,
-      battleFormat: data.bf === 'Doppio' ? 'Doppio' : 'Singolo',
-      monotype: category === 'Monotype' ? data.mt : undefined,
-      mode: data.m === 'Standard' ? 'Standard' : 'Challenge Mode',
-      notes: data.nt ? String(data.nt).slice(0, 500) : undefined,
-      updatedAt: Date.now(),
-      members,
-    };
-  } catch {
-    return null;
-  }
 }
 

@@ -1,6 +1,8 @@
 android/
-APK_BUILD_GUIDE.md
+metadata.json
+.github/
 *.apk
 .DS_Store
 dist/
 dev-dist/
+node_modules/
